@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:title" content="Calculadora de descuento de cheques · Astreon Capital">
+<meta property="og:description" content="Cuánto te queda si descontás el cheque en el banco o en el MAV.">
+<meta name="theme-color" content="#14213D">
+<title>Calculadora de descuento de cheques</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: formulario a la izquierda, resultado y cuadro comparativo a la derecha; en celular, una columna */
+:root{
+  --bg:#F6F4EF; --surface:#FFFDF8; --line:#DCD6C8; --ink:#14213D; --muted:#5B6476;
+  --mkt:#1F8A70; --mkt-soft:#E3EFE9; --bank:#B5561A; --on-accent:#F6F4EF; --group:#EDE9E0;
+  --f-display:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  --f-body:'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  --f-num:'IBM Plex Mono', ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0F1729; --surface:#172238; --line:#2C3A55; --ink:#E9ECF2; --muted:#A3ADC0;
+  --mkt:#5CC3A5; --mkt-soft:#173A33; --bank:#E8935A; --on-accent:#0F1729; --group:#1C2942; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0F1729; --surface:#172238; --line:#2C3A55; --ink:#E9ECF2; --muted:#A3ADC0;
+  --mkt:#5CC3A5; --mkt-soft:#173A33; --bank:#E8935A; --on-accent:#0F1729; --group:#1C2942; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:32px 48px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+header{display:flex;flex-direction:column;gap:8px}
+.logo{height:28px;width:auto;align-self:flex-start;margin-bottom:12px}.logo-d{display:none;filter:brightness(0) invert(1)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .logo-l{display:none}:root:not([data-theme="light"]) .logo-d{display:block}}
+:root[data-theme="dark"] .logo-l{display:none}:root[data-theme="dark"] .logo-d{display:block}
+.eyebrow{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--mkt);font-weight:600;margin:0}
+h1{font-family:var(--f-display);font-size:clamp(28px,4vw,44px);line-height:1.1;margin:0;text-wrap:balance}
+.lead{color:var(--muted);max-width:66ch;margin:0}
+.grid{display:grid;grid-template-columns:minmax(0,390px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:20px;min-width:0}
+fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;min-width:0}
+legend{font-family:var(--f-display);font-weight:700;font-size:15px;padding:0;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+legend .dot{width:10px;height:10px;border-radius:50%}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--muted);min-width:0}
+.ipt{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.ipt:focus-within{outline:2px solid var(--mkt);outline-offset:1px}
+.ipt span{padding:0 10px;color:var(--muted);font-size:13px;white-space:nowrap}
+input,select{font-family:var(--f-num);font-size:15px;color:var(--ink);background:transparent;border:0;padding:9px 0 9px 10px;width:100%;min-width:0;outline:none}
+select{font-family:var(--f-body);padding-right:8px}
+details{border-top:1px solid var(--line);padding-top:12px}
+summary{cursor:pointer;font-size:14px;font-weight:600}
+summary:focus-visible{outline:2px solid var(--mkt);outline-offset:2px}
+details[open] summary{margin-bottom:12px}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.verdict{background:var(--mkt);color:var(--on-accent);border-radius:12px;padding:22px 24px;display:flex;flex-wrap:wrap;gap:10px 32px;align-items:center;justify-content:space-between}
+.verdict.neg{background:var(--bank)}
+.verdict .big{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,5vw,50px);line-height:1}
+.verdict p{margin:0;font-size:15px;max-width:46ch}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.tile{border:1px solid var(--line);border-top:6px solid var(--c);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.tile h3{margin:0;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--c)}
+.tile .k{display:flex;justify-content:space-between;gap:12px;font-size:14px;color:var(--muted)}
+.tile .k b{color:var(--ink);font-family:var(--f-num);font-weight:500;font-variant-numeric:tabular-nums}
+.tile .k.main b{font-size:20px}
+@media (max-width:520px){.tiles{grid-template-columns:1fr}}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:460px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+th:first-child,td:first-child{text-align:left}
+thead th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+thead th.b{color:var(--bank)} thead th.m{color:var(--mkt)}
+td.num{font-family:var(--f-num)}
+td.na{color:var(--muted);font-size:13px}
+tr.g td{background:var(--group);font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--muted);padding-block:6px}
+tr.tot td{font-weight:600;background:var(--mkt-soft)}
+tr.kpi td{font-weight:600}
+.conv{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.conv div{border:1px dashed var(--line);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--muted)}
+.conv b{display:block;font-family:var(--f-num);font-size:18px;color:var(--ink);font-weight:500}
+@media (max-width:520px){.conv{grid-template-columns:1fr}}
+.notes{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:6px;margin:0;padding-left:18px}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+<header>
+  <img class="logo logo-l" src="data:image/png;base64,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" alt="Astreon Capital"><img class="logo logo-d" src="data:image/png;base64,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" alt="Astreon Capital">
+  <p class="eyebrow">Cheques de terceros · banco vs. MAV</p>
+  <h1>¿Cuánto te queda si descontás el cheque en el banco o en el mercado?</h1>
+  <p class="lead">Cargá el cheque y las condiciones de cada lado. El cuadro muestra todos los costos; el resultado principal descuenta el IVA y las percepciones porque una empresa los recupera.</p>
+</header>
+
+<div class="grid">
+<form class="card" id="f" autocomplete="off">
+  <fieldset>
+    <legend>El cheque</legend>
+    <label for="vn">Valor nominal
+      <div class="ipt"><span>$</span><input id="vn" type="text" inputmode="decimal" value="500.000.000"></div>
+    </label>
+    <label for="dias">Días hasta el cobro
+      <div class="ipt"><input id="dias" type="number" min="1" max="720" step="1" value="30"><span>días</span></div>
+    </label>
+    <p class="hint">Hasta que se acredita el cheque: el vencimiento más el clearing. Se usa igual en los dos.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend><span class="dot" style="background:var(--mkt)"></span>Mercado (MAV)</legend>
+    <div class="row">
+      <label for="rm">Tasa (TNA)
+        <div class="ipt"><input id="rm" type="number" step="0.1" min="0" value="24"><span>%</span></div>
+      </label>
+      <label for="sgr">Aval SGR (anual)
+        <div class="ipt"><input id="sgr" type="number" step="0.1" min="0" value="0"><span>%</span></div>
+      </label>
+    </div>
+    <p class="hint">Primera línea: sin aval, dejá 0. Avalado: entre 3% y 6%.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend><span class="dot" style="background:var(--bank)"></span>Banco</legend>
+    <div class="row">
+      <label for="rb">Tasa (TNA)
+        <div class="ipt"><input id="rb" type="number" step="0.1" min="0" value="24"><span>%</span></div>
+      </label>
+    </div>
+    <p class="hint">El banco calcula los intereses con la misma fórmula que el MAV, como en una liquidación real de Credicoop.</p>
+    <div class="row">
+      <label for="combco">Comisión bancaria
+        <div class="ipt"><input id="combco" type="number" step="0.05" min="0" value="0"><span>% VN</span></div>
+      </label>
+      <label for="sircreb">SIRCREB
+        <div class="ipt"><input id="sircreb" type="number" step="0.05" min="0" value="0.2"><span>%</span></div>
+      </label>
+    </div>
+  </fieldset>
+
+  <details>
+    <summary>Impuestos y otros costos</summary>
+    <fieldset>
+      <div class="row">
+        <label for="ivaint">IVA s/ intereses (banco)
+          <div class="ipt"><input id="ivaint" type="number" step="0.5" min="0" value="10.5"><span>%</span></div>
+        </label>
+        <label for="pivaint">Percep. IVA s/ intereses
+          <div class="ipt"><input id="pivaint" type="number" step="0.1" min="0" value="1.5"><span>%</span></div>
+        </label>
+      </div>
+      <div class="row">
+        <label for="piibb">Percep. IIBB s/ intereses
+          <div class="ipt"><input id="piibb" type="number" step="0.1" min="0" value="0.8"><span>%</span></div>
+        </label>
+        <label for="sellos">Sellos banco (anual)
+          <div class="ipt"><input id="sellos" type="number" step="0.1" min="0" value="1.2"><span>%</span></div>
+        </label>
+      </div>
+      <div class="row">
+        <label for="ley">Impuesto al cheque (banco)
+          <div class="ipt"><input id="ley" type="number" step="0.1" min="0" value="0.6"><span>%</span></div>
+        </label>
+        <label for="alyc">Comisión ALyC (anual)
+          <div class="ipt"><input id="alyc" type="number" step="0.1" min="0" value="1"><span>%</span></div>
+        </label>
+      </div>
+      <p class="hint">Sellos: Provincia de Buenos Aires, proporcional al plazo. Percepciones como en una liquidación de Credicoop. En el MAV: derechos de mercado 0,06% cada 90 días y Caja de Valores 0,025% + $20, más IVA 21% sobre comisiones y gastos.</p>
+    </fieldset>
+  </details>
+</form>
+
+<section class="card" aria-live="polite">
+  <div class="verdict" id="verdict">
+    <div class="big" id="dif">—</div>
+    <p id="difTxt">Completá los datos del cheque.</p>
+  </div>
+
+  <div class="tiles">
+    <div class="tile" style="--c:var(--mkt)">
+      <h3>MAV</h3>
+      <div class="k main"><span>Neto en mano</span><b id="netoM">—</b></div>
+      <div class="k"><span id="lblM">Costo efectivo anual sin IVA</span><b id="cM">—</b></div>
+      <div class="k"><span>Con IVA</span><b id="cM2">—</b></div>
+    </div>
+    <div class="tile" style="--c:var(--bank)">
+      <h3>Banco</h3>
+      <div class="k main"><span>Neto en mano</span><b id="netoB">—</b></div>
+      <div class="k"><span id="lblB">Costo efectivo anual sin IVA</span><b id="cB">—</b></div>
+      <div class="k"><span>Con IVA</span><b id="cB2">—</b></div>
+    </div>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Concepto</th><th class="b">Banco</th><th class="m">MAV</th></tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
+  </div>
+
+
+  <ul class="notes">
+    <li>En el MAV la plata se acredita en la cuenta comitente, en general en el día. Pasa 24 horas por un fondo común y llega al banco sin impuesto al cheque ni SIRCREB.</li>
+    <li>Si cargás la misma tasa en los dos, ves solo la diferencia de costos. En la práctica, la tasa del MAV suele ser más baja que la del banco.</li>
+    <li>En los dos los intereses se descuentan del cheque al momento, con la misma fórmula y por los días hasta el cobro.</li>
+    <li>El IVA y las percepciones se recuperan como crédito fiscal en un mes y medio: por eso el resultado principal es sin IVA.</li>
+    <li>* Del impuesto al cheque se puede recuperar el 33% como pago a cuenta en los anticipos de Ganancias.</li>
+    <li>Tasas y alícuotas orientativas: varían según banco, provincia y padrón. Confirmalas el día de la operación.</li>
+  </ul>
+</section>
+</div>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var fmt = new Intl.NumberFormat('es-AR',{maximumFractionDigits:0});
+  var pct = new Intl.NumberFormat('es-AR',{minimumFractionDigits:1,maximumFractionDigits:1});
+  var pct2 = new Intl.NumberFormat('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  function money(v){ return '$' + fmt.format(Math.round(v)); }
+  function parseMoney(s){ s = String(s).replace(/\$/g,'').replace(/\s/g,'').replace(/\./g,'').replace(',', '.'); var n = parseFloat(s); return isFinite(n) ? n : 0; }
+  function num(id){ var n = parseFloat($(id).value); return isFinite(n) ? n : 0; }
+
+  function mav(p){
+    var d = p.dias, vn = p.vn;
+    var interes = vn - vn / (1 + p.rm * d / 365);
+    var sgr = vn * p.sgr * d / 365;
+    var com = vn * p.alyc * d / 365;
+    var der = (vn - interes) * 0.0006 * d / 90;
+    var cv = vn * 0.00025 + 20;
+    var ivaCom = (com + der + cv) * 0.21;
+    var neto = vn - interes - sgr - com - der - cv - ivaCom;
+    return {interes:interes, ivaInt:0, perc:0, sellos:0, combco:0, alyc:com, sgr:sgr, derCv:der + cv, ivaCom:ivaCom,
+            chq:0, sircreb:0, chqSir:0, neto:neto, recup:ivaCom};
+  }
+  function banco(p){
+    var n = p.dias, vn = p.vn;
+    var interes = vn - vn / (1 + p.rb * n / 365);
+    var ivaInt = interes * p.ivaint;
+    var perc = interes * (p.pivaint + p.piibb);
+    var sellos = vn * p.sellos * n / 365;
+    var combco = vn * p.combco;
+    var acred = vn - interes - ivaInt - perc - sellos - combco;
+    var chq = acred * p.ley;
+    var sir = (acred - chq) * p.sircreb;
+    var chqSir = sir * p.ley;
+    return {interes:interes, ivaInt:ivaInt, perc:perc, sellos:sellos, combco:combco, alyc:0, sgr:0, derCv:0, ivaCom:0,
+            chq:chq, sircreb:sir, chqSir:chqSir, neto:acred - chq - sir - chqSir, recup:ivaInt + perc};
+  }
+  function costo(vn, neto, d){
+    if (!(neto > 0)) return '—';
+    return d >= 30 ? pct.format((Math.pow(vn / neto, 365 / d) - 1) * 100) + '%' : pct.format((vn / neto - 1) * 100) + '%';
+  }
+
+  function render(){
+    var p = {vn:parseMoney($('vn').value), dias:Math.round(num('dias')), rm:num('rm')/100, sgr:num('sgr')/100, alyc:num('alyc')/100,
+             rb:num('rb')/100, combco:num('combco')/100, sircreb:num('sircreb')/100,
+             ivaint:num('ivaint')/100, pivaint:num('pivaint')/100, piibb:num('piibb')/100, sellos:num('sellos')/100, ley:num('ley')/100};
+    if (!(p.vn > 0) || !(p.dias > 0)) { $('dif').textContent = '—'; $('difTxt').textContent = 'Completá el valor nominal y los días.'; $('tb').innerHTML = ''; return; }
+    var m = mav(p), b = banco(p), d = p.dias;
+    var mSin = m.neto + m.recup, bSin = b.neto + b.recup, dif = mSin - bSin;
+    $('verdict').classList.toggle('neg', dif < 0);
+    $('dif').textContent = (dif >= 0 ? '+' : '−') + money(Math.abs(dif));
+    $('difTxt').textContent = dif >= 0
+      ? 'Es lo que te queda de más vendiendo el cheque en el MAV en vez de descontarlo en el banco, una vez recuperado el IVA.'
+      : 'Con estos datos, el banco te deja más plata que el MAV.';
+    $('netoM').textContent = money(m.neto); $('netoB').textContent = money(b.neto);
+    var lbl = d < 30 ? 'Costo del período sin IVA' : 'Costo efectivo anual sin IVA';
+    $('lblM').textContent = lbl; $('lblB').textContent = lbl;
+    $('cM').textContent = costo(p.vn, mSin, d); $('cB').textContent = costo(p.vn, bSin, d);
+    $('cM2').textContent = costo(p.vn, m.neto, d); $('cB2').textContent = costo(p.vn, b.neto, d);
+
+    function cell(v, na){ return v ? '<td class="num">' + money(v) + '</td>' : '<td class="na">' + (na || '—') + '</td>'; }
+    function row(l, bv, mv, bna, mna){ if (!bv && !mv && !bna && !mna) return ''; return '<tr><td>' + l + '</td>' + cell(bv, bna) + cell(mv, mna) + '</tr>'; }
+    var h = '';
+    h += '<tr class="g"><td colspan="3">Costo financiero</td></tr>';
+    h += row('Intereses del descuento', b.interes, m.interes);
+    h += row('IVA s/ intereses', b.ivaInt, 0, null, 'Exento');
+    h += row('Percepciones IVA e IIBB', b.perc, 0, null, 'No aplica');
+    h += row('Impuesto de sellos', b.sellos, 0, null, 'Exento');
+    h += '<tr class="g"><td colspan="3">Comisiones y aranceles</td></tr>';
+    h += row('Comisión bancaria', b.combco, 0);
+    h += row('Comisión ALyC', 0, m.alyc);
+    h += row('Aval SGR', 0, m.sgr);
+    h += row('Derechos de mercado y Caja de Valores', 0, m.derCv);
+    h += row('IVA s/ comisiones y gastos (21%)', 0, m.ivaCom);
+    h += '<tr class="g"><td colspan="3">Impuestos sobre la acreditación</td></tr>';
+    h += row('Impuesto al cheque*', b.chq, 0, null, '$0');
+    h += row('Retención SIRCREB', b.sircreb, 0, null, '$0');
+    h += row('Impuesto al cheque s/ SIRCREB', b.chqSir, 0);
+    h += '<tr class="tot"><td>Neto en mano</td><td class="num">' + money(b.neto) + '</td><td class="num">' + money(m.neto) + '</td></tr>';
+    h += row('IVA y percepciones que se recuperan', b.recup, m.recup);
+    h += '<tr class="kpi"><td>Neto sin IVA</td><td class="num">' + money(bSin) + '</td><td class="num">' + money(mSin) + '</td></tr>';
+    $('tb').innerHTML = h;
+  }
+
+  $('f').addEventListener('input', render);
+  $('f').addEventListener('change', render);
+  $('f').addEventListener('submit', function(e){ e.preventDefault(); });
+  $('vn').addEventListener('blur', function(){ var v = parseMoney(this.value); if (v > 0) this.value = fmt.format(v); });
+  render();
+})();
+</script>
+
+</body>
+</html>
